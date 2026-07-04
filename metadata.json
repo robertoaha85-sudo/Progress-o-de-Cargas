@@ -1,0 +1,6 @@
+{
+  "name": "Progressão de Carga",
+  "description": "Aplicativo para registrar treinos e acompanhar progressão de carga.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
