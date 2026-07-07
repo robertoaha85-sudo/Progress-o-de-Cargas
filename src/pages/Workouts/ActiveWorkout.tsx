@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Check, ArrowUpCircle, Minus, Plus, Trash2 } from 'lucide-react';
 import { useAppStore } from '../../store/AppContext';
@@ -16,6 +16,7 @@ export function ActiveWorkout() {
   const [exercises, setExercises] = useState<LoggedExercise[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
   const [showDiscardModal, setShowDiscardModal] = useState(false);
+  const isSavingOrDiscarding = useRef(false);
   
   // Previous logs mapped by exercise template ID for progression logic
   const [previousLogs, setPreviousLogs] = useState<Record<string, { weight: number, reps: number }>>({});
@@ -83,6 +84,7 @@ export function ActiveWorkout() {
 
   // Auto-save active workout state on changes
   useEffect(() => {
+    if (isSavingOrDiscarding.current) return;
     if (isInitialized && template && exercises.length > 0) {
       setActiveWorkout({
         templateId: template.id,
@@ -140,12 +142,14 @@ export function ActiveWorkout() {
       exercises: finalExercises
     };
 
+    isSavingOrDiscarding.current = true;
     addLog(log);
     setActiveWorkout(undefined); // Clear active workout
     navigate('/historico');
   };
 
   const handleDiscard = () => {
+    isSavingOrDiscarding.current = true;
     setActiveWorkout(undefined); // Clear active workout
     setShowDiscardModal(false);
     navigate('/treinos');
