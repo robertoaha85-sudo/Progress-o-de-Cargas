@@ -12,8 +12,8 @@ export interface WorkoutTemplate {
 
 export interface LoggedSet {
   id: string;
-  weight: number;
-  reps: number;
+  weight: number | '';
+  reps: number | '';
   completed: boolean;
 }
 
@@ -43,8 +43,14 @@ export interface UserProfile {
   activityLevel: number;
 }
 
+export interface ActiveWorkoutState {
+  templateId: string;
+  exercises: LoggedExercise[];
+}
+
 export interface AppState {
   templates: WorkoutTemplate[];
   logs: WorkoutLog[];
   profile?: UserProfile;
+  activeWorkout?: ActiveWorkoutState;
 }

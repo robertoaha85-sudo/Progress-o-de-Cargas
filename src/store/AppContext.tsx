@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { AppState, WorkoutTemplate, WorkoutLog } from '../types';
+import { AppState, WorkoutTemplate, WorkoutLog, ActiveWorkoutState } from '../types';
 
 interface AppContextType {
   state: AppState;
@@ -9,6 +9,7 @@ interface AppContextType {
   addLog: (log: WorkoutLog) => void;
   deleteLog: (id: string) => void;
   updateProfile: (profile: AppState['profile']) => void;
+  setActiveWorkout: (activeWorkout?: ActiveWorkoutState) => void;
 }
 
 const defaultState: AppState = {
@@ -98,8 +99,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setState(prev => ({ ...prev, profile }));
   };
 
+  const setActiveWorkout = (activeWorkout?: ActiveWorkoutState) => {
+    setState(prev => ({ ...prev, activeWorkout }));
+  };
+
   return (
-    <AppContext.Provider value={{ state, addTemplate, updateTemplate, deleteTemplate, addLog, deleteLog, updateProfile }}>
+    <AppContext.Provider value={{ state, addTemplate, updateTemplate, deleteTemplate, addLog, deleteLog, updateProfile, setActiveWorkout }}>
       {children}
     </AppContext.Provider>
   );

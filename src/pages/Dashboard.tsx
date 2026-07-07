@@ -5,8 +5,12 @@ import { Dumbbell, Activity, Calendar, Flame, TrendingUp, ChevronRight, Check } 
 import { useAppStore } from '../store/AppContext';
 
 export function Dashboard() {
-  const { state } = useAppStore();
+  const { state, setActiveWorkout } = useAppStore();
   const navigate = useNavigate();
+
+  const activeWorkoutTemplate = state.activeWorkout 
+    ? state.templates.find(t => t.id === state.activeWorkout?.templateId) 
+    : null;
 
   const totalTreinos = state.logs.length;
   
@@ -58,6 +62,36 @@ export function Dashboard() {
           <Flame className="w-6 h-6 text-primary" />
         </div>
       </div>
+
+      {activeWorkoutTemplate && (
+        <div className="bg-primary/20 border border-primary/30 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse shrink-0"></div>
+            <div>
+              <h3 className="text-sm font-bold text-white">Treino em Andamento</h3>
+              <p className="text-xs text-gray-400 mt-0.5">Você tem uma sessão ativa de <b className="text-white">{activeWorkoutTemplate.name}</b></p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 self-end sm:self-auto">
+            <button
+              onClick={() => {
+                if (confirm('Deseja realmente descartar este treino em andamento? Todo o progresso será perdido.')) {
+                  setActiveWorkout(undefined);
+                }
+              }}
+              className="px-4 py-2 bg-transparent text-red-400 hover:text-red-300 font-bold text-xs uppercase transition-colors"
+            >
+              Descartar
+            </button>
+            <Link
+              to={`/treinos/${activeWorkoutTemplate.id}/iniciar`}
+              className="px-5 py-2 bg-primary hover:bg-primary/90 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-colors"
+            >
+              Continuar
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Semana */}
       <div className="bg-card rounded-3xl p-5 border border-gray-800 shrink-0">

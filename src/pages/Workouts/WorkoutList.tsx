@@ -7,10 +7,14 @@ import { ConfirmModal } from '../../components/ConfirmModal';
 import { usePWA } from '../../hooks/usePWA';
 
 export function WorkoutList() {
-  const { state, deleteTemplate, addTemplate } = useAppStore();
+  const { state, deleteTemplate, addTemplate, setActiveWorkout } = useAppStore();
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const { isInstallable, install, isIOS, isStandalone } = usePWA();
   const [showInstallBanner, setShowInstallBanner] = useState(true);
+
+  const activeWorkoutTemplate = state.activeWorkout 
+    ? state.templates.find(t => t.id === state.activeWorkout?.templateId) 
+    : null;
 
   const handleDelete = () => {
     if (deleteId) {
@@ -67,6 +71,36 @@ export function WorkoutList() {
         </div>
       )}
 
+      {activeWorkoutTemplate && (
+        <div className="bg-primary/20 border border-primary/30 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse shrink-0"></div>
+            <div>
+              <h3 className="text-sm font-bold text-white">Treino em Andamento</h3>
+              <p className="text-xs text-gray-400 mt-0.5">Você tem uma sessão ativa de <b className="text-white">{activeWorkoutTemplate.name}</b></p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 self-end sm:self-auto">
+            <button
+              onClick={() => {
+                if (confirm('Deseja realmente descartar este treino em andamento? Todo o progresso será perdido.')) {
+                  setActiveWorkout(undefined);
+                }
+              }}
+              className="px-4 py-2 bg-transparent text-red-400 hover:text-red-300 font-bold text-xs uppercase transition-colors"
+            >
+              Descartar
+            </button>
+            <Link
+              to={`/treinos/${activeWorkoutTemplate.id}/iniciar`}
+              className="px-5 py-2 bg-primary hover:bg-primary/90 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-colors"
+            >
+              Continuar
+            </Link>
+          </div>
+        </div>
+      )}
+
       <div className="flex-1 bg-[#151515] rounded-3xl p-6 border border-gray-800 flex flex-col">
         {state.templates.length === 0 ? (
           <div className="text-center py-12">
@@ -80,50 +114,73 @@ export function WorkoutList() {
           </div>
         ) : (
           <div className="flex-1 flex flex-col gap-3 overflow-y-auto custom-scrollbar pr-2">
-            {state.templates.map((template, idx) => (
-              <div key={template.id} className="p-4 bg-card rounded-2xl border border-gray-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 opacity-90 hover:opacity-100 transition-opacity">
-                <div className="flex gap-4 items-center">
-                  <div className="w-12 h-12 bg-gray-800 rounded-xl flex items-center justify-center font-bold text-gray-400">
-                    {String(idx + 1).padStart(2, '0')}
+            {state.templates.map((template, idx) => {
+              const isActive = state.activeWorkout && state.activeWorkout.templateId === template.id;
+              return (
+                <div 
+                  key={template.id} 
+                  className={`p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all ${
+                    isActive 
+                      ? 'border-primary bg-primary/5 shadow-lg shadow-primary/5 opacity-100' 
+                      : 'border-gray-800 bg-card opacity-90 hover:opacity-100'
+                  }`}
+                >
+                  <div className="flex gap-4 items-center">
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold transition-colors ${
+                      isActive ? 'bg-primary text-white' : 'bg-gray-800 text-gray-400'
+                    }`}>
+                      {String(idx + 1).padStart(2, '0')}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-bold text-white">{template.name}</h3>
+                        {isActive && (
+                          <span className="text-[9px] px-2 py-0.5 bg-primary/20 text-primary border border-primary/30 rounded-full font-bold uppercase tracking-wider animate-pulse">
+                            Em andamento
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-500 uppercase font-bold mt-1">{template.exercises.length} exercícios</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-bold text-white">{template.name}</h3>
-                    <p className="text-xs text-gray-500 uppercase font-bold mt-1">{template.exercises.length} exercícios</p>
+                  
+                  <div className="flex items-center gap-2 self-end sm:self-auto">
+                    <button
+                      onClick={() => handleDuplicate(template)}
+                      className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+                      title="Duplicar treino"
+                    >
+                      <Copy className="w-5 h-5" />
+                    </button>
+                    <Link
+                      to={`/treinos/${template.id}/editar`}
+                      className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+                      title="Editar treino"
+                    >
+                      <Edit2 className="w-5 h-5" />
+                    </Link>
+                    <button
+                      onClick={() => setDeleteId(template.id)}
+                      className="p-2 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded-lg transition-colors"
+                      title="Excluir treino"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                    <Link
+                      to={`/treinos/${template.id}/iniciar`}
+                      className={`ml-2 px-6 py-2 rounded-full text-sm font-bold flex items-center gap-2 transition-all ${
+                        isActive 
+                          ? 'bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20' 
+                          : 'bg-white hover:bg-gray-200 text-black'
+                      }`}
+                    >
+                      <Play className={`w-4 h-4 ${isActive ? 'fill-white text-white' : 'fill-black text-black'}`} />
+                      {isActive ? 'CONTINUAR' : 'INICIAR'}
+                    </Link>
                   </div>
                 </div>
-                
-                <div className="flex items-center gap-2 self-end sm:self-auto">
-                  <button
-                    onClick={() => handleDuplicate(template)}
-                    className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
-                    title="Duplicar treino"
-                  >
-                    <Copy className="w-5 h-5" />
-                  </button>
-                  <Link
-                    to={`/treinos/${template.id}/editar`}
-                    className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
-                    title="Editar treino"
-                  >
-                    <Edit2 className="w-5 h-5" />
-                  </Link>
-                  <button
-                    onClick={() => setDeleteId(template.id)}
-                    className="p-2 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded-lg transition-colors"
-                    title="Excluir treino"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
-                  <Link
-                    to={`/treinos/${template.id}/iniciar`}
-                    className="ml-2 bg-white text-black px-6 py-2 rounded-full text-sm font-bold flex items-center gap-2 hover:bg-gray-200 transition-colors"
-                  >
-                    <Play className="w-4 h-4 fill-black" />
-                    INICIAR
-                  </Link>
-                </div>
-              </div>
-            ))}
+              );
+            })}
             
             <Link 
               to="/treinos/novo"

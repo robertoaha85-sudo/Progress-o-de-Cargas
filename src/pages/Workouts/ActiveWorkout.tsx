@@ -1,17 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Check, ArrowUpCircle, Minus, Plus } from 'lucide-react';
+import { ArrowLeft, Check, ArrowUpCircle, Minus, Plus, Trash2 } from 'lucide-react';
 import { useAppStore } from '../../store/AppContext';
 import { LoggedExercise, WorkoutLog } from '../../types';
+import { ConfirmModal } from '../../components/ConfirmModal';
 
 export function ActiveWorkout() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { state, addLog } = useAppStore();
+  const { state, addLog, setActiveWorkout } = useAppStore();
   
   const template = state.templates.find(t => t.id === id);
   
   const [exercises, setExercises] = useState<LoggedExercise[]>([]);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [showDiscardModal, setShowDiscardModal] = useState(false);
   
   // Previous logs mapped by exercise template ID for progression logic
   const [previousLogs, setPreviousLogs] = useState<Record<string, { weight: number, reps: number }>>({});
@@ -22,6 +25,8 @@ export function ActiveWorkout() {
       return;
     }
 
+    if (isInitialized) return;
+
     // Find previous logs to suggest progression and populate initials
     const prevMap: Record<string, { weight: number, reps: number }> = {};
     for (let i = state.logs.length - 1; i >= 0; i--) {
@@ -29,42 +34,65 @@ export function ActiveWorkout() {
       for (const ex of log.exercises) {
         if (!prevMap[ex.exerciseId] && ex.sets.length > 0) {
           // Use the best set or first set for suggestion
-          const bestSet = [...ex.sets].sort((a, b) => b.weight - a.weight)[0];
+          const bestSet = [...ex.sets].sort((a, b) => {
+            const wa = typeof a.weight === 'number' ? a.weight : 0;
+            const wb = typeof b.weight === 'number' ? b.weight : 0;
+            return wb - wa;
+          })[0];
           if (bestSet) {
-            prevMap[ex.exerciseId] = { weight: bestSet.weight, reps: bestSet.reps };
+            prevMap[ex.exerciseId] = { 
+              weight: typeof bestSet.weight === 'number' ? bestSet.weight : 0, 
+              reps: typeof bestSet.reps === 'number' ? bestSet.reps : 0 
+            };
           }
         }
       }
     }
-    
-    // Initialize with full sets array
-    const initialEx = template.exercises.map(ex => {
-      const prev = prevMap[ex.id];
-      const initialWeight = prev ? prev.weight : 0;
-      const initialReps = prev ? prev.reps : 0;
-      
-      const setsArray = Array.from({ length: ex.sets }).map(() => ({
-        id: crypto.randomUUID(),
-        weight: initialWeight,
-        reps: initialReps,
-        completed: false
-      }));
-
-      return {
-        id: crypto.randomUUID(),
-        exerciseId: ex.id,
-        name: ex.name,
-        sets: setsArray
-      };
-    });
-    
     setPreviousLogs(prevMap);
-    setExercises(initialEx);
-  }, [id, template, state.logs, navigate]);
+    
+    // Check if there is an active saved workout for this template
+    if (state.activeWorkout && state.activeWorkout.templateId === id) {
+      setExercises(state.activeWorkout.exercises);
+    } else {
+      // Initialize with template exercises
+      const initialEx = template.exercises.map(ex => {
+        const prev = prevMap[ex.id];
+        const initialWeight: number | '' = prev ? prev.weight : '';
+        const initialReps: number | '' = prev ? prev.reps : '';
+        
+        const setsArray = Array.from({ length: ex.sets }).map(() => ({
+          id: crypto.randomUUID(),
+          weight: initialWeight,
+          reps: initialReps,
+          completed: false
+        }));
+
+        return {
+          id: crypto.randomUUID(),
+          exerciseId: ex.id,
+          name: ex.name,
+          sets: setsArray
+        };
+      });
+      setExercises(initialEx);
+    }
+    
+    setIsInitialized(true);
+  }, [id, template, state.logs, navigate, state.activeWorkout, isInitialized]);
+
+  // Auto-save active workout state on changes
+  useEffect(() => {
+    if (isInitialized && template && exercises.length > 0) {
+      setActiveWorkout({
+        templateId: template.id,
+        exercises
+      });
+    }
+  }, [exercises, template, isInitialized, setActiveWorkout]);
 
   if (!template) return null;
 
-  const updateSet = (exerciseId: string, setId: string, field: 'weight' | 'reps', value: number) => {
+  const updateSet = (exerciseId: string, setId: string, field: 'weight' | 'reps', value: number | '') => {
     setExercises(exercises.map(ex => {
       if (ex.id !== exerciseId) return ex;
       return {
@@ -88,7 +116,11 @@ export function ActiveWorkout() {
     // Validate: only include exercises that have at least one completed set
     const finalExercises = exercises.map(ex => ({
       ...ex,
-      sets: ex.sets.filter(s => s.completed)
+      sets: ex.sets.filter(s => s.completed).map(s => ({
+        ...s,
+        weight: s.weight === '' ? 0 : s.weight,
+        reps: s.reps === '' ? 0 : s.reps
+      }))
     })).filter(ex => ex.sets.length > 0);
 
     if (finalExercises.length === 0) {
@@ -105,7 +137,14 @@ export function ActiveWorkout() {
     };
 
     addLog(log);
+    setActiveWorkout(undefined); // Clear active workout
     navigate('/historico');
+  };
+
+  const handleDiscard = () => {
+    setActiveWorkout(undefined); // Clear active workout
+    setShowDiscardModal(false);
+    navigate('/treinos');
   };
 
   return (
@@ -136,7 +175,10 @@ export function ActiveWorkout() {
           {exercises.map((exercise, idx) => {
             const prev = previousLogs[exercise.exerciseId];
             // Get max weight from current sets
-            const currentMaxWeight = exercise.sets.reduce((max, s) => Math.max(max, s.weight), 0);
+            const currentMaxWeight = exercise.sets.reduce((max, s) => {
+              const w = typeof s.weight === 'number' ? s.weight : 0;
+              return Math.max(max, w);
+            }, 0);
             const suggestIncrease = prev && prev.reps >= 12 && currentMaxWeight <= prev.weight;
 
             return (
@@ -171,15 +213,69 @@ export function ActiveWorkout() {
                       <div className="text-center font-black text-gray-400">{setIdx + 1}</div>
                       
                       <div className="flex items-center justify-between bg-gray-900 border border-gray-700 rounded-xl overflow-hidden h-12">
-                        <button onClick={() => updateSet(exercise.id, set.id, 'weight', Math.max(0, set.weight - 1))} className="w-10 h-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-800 active:bg-gray-700 transition-colors"><Minus className="w-4 h-4" /></button>
-                        <input type="number" value={set.weight || ''} onChange={(e) => updateSet(exercise.id, set.id, 'weight', parseFloat(e.target.value) || 0)} className="w-full text-center bg-transparent font-black text-white focus:outline-none" placeholder="0" />
-                        <button onClick={() => updateSet(exercise.id, set.id, 'weight', set.weight + 1)} className="w-10 h-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-800 active:bg-gray-700 transition-colors"><Plus className="w-4 h-4" /></button>
+                        <button 
+                          onClick={() => {
+                            const currentVal = typeof set.weight === 'number' ? set.weight : 0;
+                            updateSet(exercise.id, set.id, 'weight', Math.max(0, currentVal - 1));
+                          }} 
+                          className="w-10 h-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-800 active:bg-gray-700 transition-colors"
+                        >
+                          <Minus className="w-4 h-4" />
+                        </button>
+                        <input 
+                          type="number" 
+                          inputMode="decimal"
+                          value={set.weight} 
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            updateSet(exercise.id, set.id, 'weight', val === '' ? '' : (parseFloat(val) || 0));
+                          }} 
+                          onFocus={(e) => e.target.select()}
+                          className="w-full text-center bg-transparent font-black text-white focus:outline-none" 
+                          placeholder="0" 
+                        />
+                        <button 
+                          onClick={() => {
+                            const currentVal = typeof set.weight === 'number' ? set.weight : 0;
+                            updateSet(exercise.id, set.id, 'weight', currentVal + 1);
+                          }} 
+                          className="w-10 h-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-800 active:bg-gray-700 transition-colors"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </button>
                       </div>
 
                       <div className="flex items-center justify-between bg-gray-900 border border-gray-700 rounded-xl overflow-hidden h-12">
-                        <button onClick={() => updateSet(exercise.id, set.id, 'reps', Math.max(0, set.reps - 1))} className="w-10 h-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-800 active:bg-gray-700 transition-colors"><Minus className="w-4 h-4" /></button>
-                        <input type="number" value={set.reps || ''} onChange={(e) => updateSet(exercise.id, set.id, 'reps', parseInt(e.target.value) || 0)} className="w-full text-center bg-transparent font-black text-white focus:outline-none" placeholder="0" />
-                        <button onClick={() => updateSet(exercise.id, set.id, 'reps', set.reps + 1)} className="w-10 h-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-800 active:bg-gray-700 transition-colors"><Plus className="w-4 h-4" /></button>
+                        <button 
+                          onClick={() => {
+                            const currentVal = typeof set.reps === 'number' ? set.reps : 0;
+                            updateSet(exercise.id, set.id, 'reps', Math.max(0, currentVal - 1));
+                          }} 
+                          className="w-10 h-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-800 active:bg-gray-700 transition-colors"
+                        >
+                          <Minus className="w-4 h-4" />
+                        </button>
+                        <input 
+                          type="number" 
+                          inputMode="numeric"
+                          value={set.reps} 
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            updateSet(exercise.id, set.id, 'reps', val === '' ? '' : (parseInt(val, 10) || 0));
+                          }} 
+                          onFocus={(e) => e.target.select()}
+                          className="w-full text-center bg-transparent font-black text-white focus:outline-none" 
+                          placeholder="0" 
+                        />
+                        <button 
+                          onClick={() => {
+                            const currentVal = typeof set.reps === 'number' ? set.reps : 0;
+                            updateSet(exercise.id, set.id, 'reps', currentVal + 1);
+                          }} 
+                          className="w-10 h-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-800 active:bg-gray-700 transition-colors"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </button>
                       </div>
 
                       <button onClick={() => toggleSetCompleted(exercise.id, set.id)} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${set.completed ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-gray-800 text-gray-500 hover:bg-gray-700'}`}>
@@ -191,8 +287,24 @@ export function ActiveWorkout() {
               </div>
             );
           })}
+
+          <button
+            onClick={() => setShowDiscardModal(true)}
+            className="w-full mt-6 border border-red-900/30 bg-red-950/20 hover:bg-red-950/40 text-red-400 font-bold py-4 rounded-2xl text-xs uppercase tracking-wider transition-colors flex items-center justify-center gap-2"
+          >
+            <Trash2 className="w-4 h-4" />
+            Descartar Treino em Andamento
+          </button>
         </div>
       </div>
+
+      <ConfirmModal 
+        isOpen={showDiscardModal}
+        title="Descartar Treino"
+        message="Tem certeza que deseja descartar este treino? Todo o progresso atual marcado nesta sessão será perdido."
+        onConfirm={handleDiscard}
+        onCancel={() => setShowDiscardModal(false)}
+      />
     </div>
   );
 }
