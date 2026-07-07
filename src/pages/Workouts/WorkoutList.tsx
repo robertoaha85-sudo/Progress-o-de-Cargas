@@ -5,6 +5,7 @@ import { useAppStore } from '../../store/AppContext';
 import { WorkoutTemplate } from '../../types';
 import { ConfirmModal } from '../../components/ConfirmModal';
 import { usePWA } from '../../hooks/usePWA';
+import { generateUUID } from '../../lib/utils';
 
 export function WorkoutList() {
   const { state, deleteTemplate, addTemplate, setActiveWorkout } = useAppStore();
@@ -26,9 +27,9 @@ export function WorkoutList() {
   const handleDuplicate = (template: WorkoutTemplate) => {
     const newTemplate: WorkoutTemplate = {
       ...template,
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       name: `${template.name} (Cópia)`,
-      exercises: template.exercises.map(ex => ({ ...ex, id: crypto.randomUUID() }))
+      exercises: template.exercises.map(ex => ({ ...ex, id: generateUUID() }))
     };
     addTemplate(newTemplate);
   };

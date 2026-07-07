@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, Minus, Calendar, Clock, Clipboard, Activity } from 'lucide-react';
 import { useAppStore } from '../../store/AppContext';
+import { generateUUID } from '../../lib/utils';
 
 export function LogRun() {
   const navigate = useNavigate();
@@ -29,7 +30,7 @@ export function LogRun() {
     const formattedDuration = `${hStr}:${mStr}:${sStr}`;
 
     addRun({
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       date: new Date(date + 'T12:00:00').toISOString(),
       distance: d,
       duration: formattedDuration,

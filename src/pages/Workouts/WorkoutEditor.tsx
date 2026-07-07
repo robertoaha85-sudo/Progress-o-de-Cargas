@@ -4,6 +4,7 @@ import { Dumbbell, Plus, GripVertical, Trash2, ArrowLeft } from 'lucide-react';
 import { useAppStore } from '../../store/AppContext';
 import { WorkoutTemplate, ExerciseTemplate } from '../../types';
 import { ConfirmModal } from '../../components/ConfirmModal';
+import { generateUUID } from '../../lib/utils';
 import {
   DndContext,
   closestCenter,
@@ -107,7 +108,7 @@ export function WorkoutEditor() {
     } else {
       // Create initial 8 empty exercises
       const initialExercises = Array.from({ length: 8 }).map(() => ({
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         name: '',
         sets: 3
       }));
@@ -134,7 +135,7 @@ export function WorkoutEditor() {
   };
 
   const addExercise = () => {
-    setExercises([...exercises, { id: crypto.randomUUID(), name: '', sets: 3 }]);
+    setExercises([...exercises, { id: generateUUID(), name: '', sets: 3 }]);
   };
 
   const updateExercise = (id: string, field: string, value: any) => {
@@ -162,7 +163,7 @@ export function WorkoutEditor() {
     }
 
     const template: WorkoutTemplate = {
-      id: isEditing ? id! : crypto.randomUUID(),
+      id: isEditing ? id! : generateUUID(),
       name: name.trim(),
       exercises: validExercises
     };

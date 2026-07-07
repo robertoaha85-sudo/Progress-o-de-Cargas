@@ -4,6 +4,7 @@ import { ArrowLeft, Check, ArrowUpCircle, Minus, Plus, Trash2 } from 'lucide-rea
 import { useAppStore } from '../../store/AppContext';
 import { LoggedExercise, WorkoutLog } from '../../types';
 import { ConfirmModal } from '../../components/ConfirmModal';
+import { generateUUID } from '../../lib/utils';
 
 export function ActiveWorkout() {
   const { id } = useParams();
@@ -61,14 +62,14 @@ export function ActiveWorkout() {
         const initialReps: number | '' = prev ? prev.reps : '';
         
         const setsArray = Array.from({ length: ex.sets }).map(() => ({
-          id: crypto.randomUUID(),
+          id: generateUUID(),
           weight: initialWeight,
           reps: initialReps,
           completed: false
         }));
 
         return {
-          id: crypto.randomUUID(),
+          id: generateUUID(),
           exerciseId: ex.id,
           name: ex.name,
           sets: setsArray
@@ -113,23 +114,26 @@ export function ActiveWorkout() {
   };
 
   const handleSave = () => {
-    // Validate: only include exercises that have at least one completed set
+    // Validate: only include exercises that have at least one completed set or filled-in values
     const finalExercises = exercises.map(ex => ({
       ...ex,
-      sets: ex.sets.filter(s => s.completed).map(s => ({
-        ...s,
-        weight: s.weight === '' ? 0 : (parseFloat(String(s.weight)) || 0),
-        reps: s.reps === '' ? 0 : (parseInt(String(s.reps), 10) || 0)
-      }))
+      sets: ex.sets
+        .filter(s => s.completed || s.weight !== '' || s.reps !== '')
+        .map(s => ({
+          ...s,
+          weight: s.weight === '' ? 0 : (parseFloat(String(s.weight)) || 0),
+          reps: s.reps === '' ? 0 : (parseInt(String(s.reps), 10) || 0),
+          completed: true
+        }))
     })).filter(ex => ex.sets.length > 0);
 
     if (finalExercises.length === 0) {
-      alert('Você precisa completar pelo menos uma série para finalizar o treino.');
+      alert('Você precisa preencher ou completar pelo menos uma série para finalizar o treino.');
       return;
     }
 
     const log: WorkoutLog = {
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       templateId: template.id,
       name: template.name,
       date: new Date().toISOString(),

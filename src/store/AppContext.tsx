@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { AppState, WorkoutTemplate, WorkoutLog, ActiveWorkoutState, RunningLog } from '../types';
+import { generateUUID } from '../lib/utils';
 
 interface AppContextType {
   state: AppState;
@@ -43,7 +44,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               const newSets: any[] = [];
               for (let i = 0; i < (typeof setsCount === 'number' ? setsCount : 1); i++) {
                 newSets.push({
-                  id: crypto.randomUUID(),
+                  id: generateUUID(),
                   weight: ex.weight || 0,
                   reps: ex.reps || 0,
                   completed: true
