@@ -204,25 +204,27 @@ export function WorkoutList() {
           </div>
         </div>
         
-        <div className="p-4 bg-card rounded-2xl border border-gray-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <Link
+          to="/corrida/novo"
+          className="p-4 bg-card rounded-2xl border border-gray-800 hover:border-primary/50 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer group"
+        >
           <div className="flex gap-4 items-center">
-            <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center text-white font-black text-lg">
+            <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center text-white font-black text-lg group-hover:scale-105 transition-transform">
               🏃
             </div>
             <div>
-              <h3 className="font-bold text-white">Nova Corrida</h3>
+              <h3 className="font-bold text-white group-hover:text-primary transition-colors">Nova Corrida</h3>
               <p className="text-xs text-gray-500 uppercase font-bold mt-1">Grave tempo e distância</p>
             </div>
           </div>
           
-          <Link
-            to="/corrida/novo"
-            className="px-6 py-2 bg-white hover:bg-gray-200 text-black rounded-full text-sm font-bold flex items-center gap-2 transition-all self-end sm:self-auto"
+          <div
+            className="px-6 py-2 bg-white group-hover:bg-primary group-hover:text-white text-black rounded-full text-sm font-bold flex items-center gap-2 transition-all self-end sm:self-auto"
           >
-            <Play className="w-4 h-4 fill-black text-black" />
+            <Play className="w-4 h-4 fill-current text-current" />
             REGISTRAR
-          </Link>
-        </div>
+          </div>
+        </Link>
       </div>
 
       <ConfirmModal 
