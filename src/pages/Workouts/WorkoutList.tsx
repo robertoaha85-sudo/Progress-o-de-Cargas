@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Edit2, Play, Trash2, Copy, Download, X } from 'lucide-react';
+import { Plus, Edit2, Play, Trash2, Copy, Download, X, Activity } from 'lucide-react';
 import { useAppStore } from '../../store/AppContext';
 import { WorkoutTemplate } from '../../types';
 import { ConfirmModal } from '../../components/ConfirmModal';
@@ -190,6 +190,39 @@ export function WorkoutList() {
             </Link>
           </div>
         )}
+      </div>
+
+      {/* Seção de Treinos de Corrida */}
+      <div className="bg-[#151515] rounded-3xl p-6 border border-gray-800 flex flex-col gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center text-primary">
+            <Activity className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-lg font-black text-white">Treino de Corrida</h2>
+            <p className="text-xs text-gray-500 mt-0.5">Acompanhe seu progresso de corrida ao ar livre ou na esteira.</p>
+          </div>
+        </div>
+        
+        <div className="p-4 bg-card rounded-2xl border border-gray-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex gap-4 items-center">
+            <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center text-white font-black text-lg">
+              🏃
+            </div>
+            <div>
+              <h3 className="font-bold text-white">Nova Corrida</h3>
+              <p className="text-xs text-gray-500 uppercase font-bold mt-1">Grave tempo e distância</p>
+            </div>
+          </div>
+          
+          <Link
+            to="/corrida/novo"
+            className="px-6 py-2 bg-white hover:bg-gray-200 text-black rounded-full text-sm font-bold flex items-center gap-2 transition-all self-end sm:self-auto"
+          >
+            <Play className="w-4 h-4 fill-black text-black" />
+            REGISTRAR
+          </Link>
+        </div>
       </div>
 
       <ConfirmModal 

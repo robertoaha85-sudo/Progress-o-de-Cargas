@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { AppState, WorkoutTemplate, WorkoutLog, ActiveWorkoutState } from '../types';
+import { AppState, WorkoutTemplate, WorkoutLog, ActiveWorkoutState, RunningLog } from '../types';
 
 interface AppContextType {
   state: AppState;
@@ -8,6 +8,8 @@ interface AppContextType {
   deleteTemplate: (id: string) => void;
   addLog: (log: WorkoutLog) => void;
   deleteLog: (id: string) => void;
+  addRun: (run: RunningLog) => void;
+  deleteRun: (id: string) => void;
   updateProfile: (profile: AppState['profile']) => void;
   setActiveWorkout: (activeWorkout?: ActiveWorkoutState) => void;
 }
@@ -15,6 +17,7 @@ interface AppContextType {
 const defaultState: AppState = {
   templates: [],
   logs: [],
+  runs: [],
 };
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -52,6 +55,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               };
             })
           }));
+        }
+
+        // Initialize runs array if not exists
+        if (!parsed.runs) {
+          parsed.runs = [];
         }
 
         return parsed;
@@ -95,6 +103,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }));
   };
 
+  const addRun = (run: RunningLog) => {
+    setState(prev => ({ ...prev, runs: [...(prev.runs || []), run] }));
+  };
+
+  const deleteRun = (id: string) => {
+    setState(prev => ({
+      ...prev,
+      runs: (prev.runs || []).filter(r => r.id !== id)
+    }));
+  };
+
   const updateProfile = (profile: AppState['profile']) => {
     setState(prev => ({ ...prev, profile }));
   };
@@ -104,7 +123,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   return (
-    <AppContext.Provider value={{ state, addTemplate, updateTemplate, deleteTemplate, addLog, deleteLog, updateProfile, setActiveWorkout }}>
+    <AppContext.Provider value={{ state, addTemplate, updateTemplate, deleteTemplate, addLog, deleteLog, addRun, deleteRun, updateProfile, setActiveWorkout }}>
       {children}
     </AppContext.Provider>
   );

@@ -10,6 +10,7 @@ import { Dashboard } from './pages/Dashboard';
 import { WorkoutList } from './pages/Workouts/WorkoutList';
 import { WorkoutEditor } from './pages/Workouts/WorkoutEditor';
 import { ActiveWorkout } from './pages/Workouts/ActiveWorkout';
+import { LogRun } from './pages/Workouts/LogRun';
 import { History } from './pages/History';
 import { Evolution } from './pages/Evolution';
 import { Settings } from './pages/Settings';
@@ -26,6 +27,7 @@ export default function App() {
             <Route path="treinos/:id/editar" element={<WorkoutEditor />} />
             <Route path="treinos/novo" element={<WorkoutEditor />} />
             <Route path="treinos/:id/iniciar" element={<ActiveWorkout />} />
+            <Route path="corrida/novo" element={<LogRun />} />
             <Route path="historico" element={<History />} />
             <Route path="evolucao" element={<Evolution />} />
             <Route path="configuracoes" element={<Settings />} />

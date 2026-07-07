@@ -92,7 +92,7 @@ export function ActiveWorkout() {
 
   if (!template) return null;
 
-  const updateSet = (exerciseId: string, setId: string, field: 'weight' | 'reps', value: number | '') => {
+  const updateSet = (exerciseId: string, setId: string, field: 'weight' | 'reps', value: number | string | '') => {
     setExercises(exercises.map(ex => {
       if (ex.id !== exerciseId) return ex;
       return {
@@ -118,8 +118,8 @@ export function ActiveWorkout() {
       ...ex,
       sets: ex.sets.filter(s => s.completed).map(s => ({
         ...s,
-        weight: s.weight === '' ? 0 : s.weight,
-        reps: s.reps === '' ? 0 : s.reps
+        weight: s.weight === '' ? 0 : (parseFloat(String(s.weight)) || 0),
+        reps: s.reps === '' ? 0 : (parseInt(String(s.reps), 10) || 0)
       }))
     })).filter(ex => ex.sets.length > 0);
 
@@ -215,7 +215,7 @@ export function ActiveWorkout() {
                       <div className="flex items-center justify-between bg-gray-900 border border-gray-700 rounded-xl overflow-hidden h-12">
                         <button 
                           onClick={() => {
-                            const currentVal = typeof set.weight === 'number' ? set.weight : 0;
+                            const currentVal = parseFloat(String(set.weight)) || 0;
                             updateSet(exercise.id, set.id, 'weight', Math.max(0, currentVal - 1));
                           }} 
                           className="w-10 h-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-800 active:bg-gray-700 transition-colors"
@@ -223,12 +223,15 @@ export function ActiveWorkout() {
                           <Minus className="w-4 h-4" />
                         </button>
                         <input 
-                          type="number" 
+                          type="text" 
                           inputMode="decimal"
                           value={set.weight} 
                           onChange={(e) => {
                             const val = e.target.value;
-                            updateSet(exercise.id, set.id, 'weight', val === '' ? '' : (parseFloat(val) || 0));
+                            if (val === '' || /^[0-9]*[.,]?[0-9]*$/.test(val)) {
+                              const normalized = val.replace(',', '.');
+                              updateSet(exercise.id, set.id, 'weight', normalized);
+                            }
                           }} 
                           onFocus={(e) => e.target.select()}
                           className="w-full text-center bg-transparent font-black text-white focus:outline-none" 
@@ -236,7 +239,7 @@ export function ActiveWorkout() {
                         />
                         <button 
                           onClick={() => {
-                            const currentVal = typeof set.weight === 'number' ? set.weight : 0;
+                            const currentVal = parseFloat(String(set.weight)) || 0;
                             updateSet(exercise.id, set.id, 'weight', currentVal + 1);
                           }} 
                           className="w-10 h-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-800 active:bg-gray-700 transition-colors"
@@ -248,7 +251,7 @@ export function ActiveWorkout() {
                       <div className="flex items-center justify-between bg-gray-900 border border-gray-700 rounded-xl overflow-hidden h-12">
                         <button 
                           onClick={() => {
-                            const currentVal = typeof set.reps === 'number' ? set.reps : 0;
+                            const currentVal = parseInt(String(set.reps), 10) || 0;
                             updateSet(exercise.id, set.id, 'reps', Math.max(0, currentVal - 1));
                           }} 
                           className="w-10 h-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-800 active:bg-gray-700 transition-colors"
@@ -256,12 +259,14 @@ export function ActiveWorkout() {
                           <Minus className="w-4 h-4" />
                         </button>
                         <input 
-                          type="number" 
+                          type="text" 
                           inputMode="numeric"
                           value={set.reps} 
                           onChange={(e) => {
                             const val = e.target.value;
-                            updateSet(exercise.id, set.id, 'reps', val === '' ? '' : (parseInt(val, 10) || 0));
+                            if (val === '' || /^[0-9]*$/.test(val)) {
+                              updateSet(exercise.id, set.id, 'reps', val);
+                            }
                           }} 
                           onFocus={(e) => e.target.select()}
                           className="w-full text-center bg-transparent font-black text-white focus:outline-none" 
@@ -269,7 +274,7 @@ export function ActiveWorkout() {
                         />
                         <button 
                           onClick={() => {
-                            const currentVal = typeof set.reps === 'number' ? set.reps : 0;
+                            const currentVal = parseInt(String(set.reps), 10) || 0;
                             updateSet(exercise.id, set.id, 'reps', currentVal + 1);
                           }} 
                           className="w-10 h-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-800 active:bg-gray-700 transition-colors"
